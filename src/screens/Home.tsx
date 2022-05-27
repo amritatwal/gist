@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button, Text, View, TextInput, StyleSheet } from 'react-native'
 import { RootStackParamList } from '../../types';
 import { auth } from '../firebase/config';
-import { getDatabase, ref, set } from 'firebase/database';
+import { getDatabase, ref, set, onValue, child, get } from 'firebase/database';
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -29,14 +29,14 @@ export const Home: React.FC<HomeScreenProps> = (props) => {
     // UI: pop-up/modal? user is prompted to either add a new contact or create a new group (after MVP)
     // Adding a new contact to create a chat entails: retrieving the contact's name (in order to provide a name when creating/displaying a user's contact list), a phone number or email (MVP)...
     function writeChatData(currentUser, contact) {
+      const chatUUID = uuidv4().toString();
       console.log(currentUser)
       // TODO: 
       // Check a chat between two contacts doesn't already exist otherwise it'll create duplicate chats!
       try {
-        const chatUUID = uuidv4().toString();
         set(ref(db, 'chats/' + chatUUID), {
-          lastMessage: null,
-          timestamp: null
+          lastMessage: false,
+          timestamp: false
         });
         set(ref(db, 'users/' + currentUser + '/chats'), {
           [chatUUID]: true
@@ -61,6 +61,39 @@ export const Home: React.FC<HomeScreenProps> = (props) => {
     props.navigation.replace("Welcome")
   }
 
+  // Read in user's active chats from realtime database
+  function getUserChatIDs(currentUser) {
+    // Locate the chat ids under user's uid
+    const contactsList = ref(db, 'users/' + currentUser + '/chats');
+    onValue(contactsList, (snapshot) => {
+      const data = snapshot.val();
+      console.log(data);
+      // TODO: call a function here 
+    })
+  }
+
+  // Use the chat uids to retrieve data from /chats 
+
+  function getChatData(chats) {
+    const dbRef = ref(db);
+    const results = chats.map(id => {
+      get(child(dbRef, `users/chats/${id}`)).then((snapshot) => {
+        if (snapshot.exists()) {
+          console.log(snapshot.val());
+        } else {
+          console.log("No data available");
+        }
+      }).catch((error) => {
+        console.error(error);
+      });
+    })
+  }
+
+
+
+  getUserChatIDs(auth.currentUser.uid);
+
+
   return (
     <>
       <View>
@@ -72,7 +105,7 @@ export const Home: React.FC<HomeScreenProps> = (props) => {
           value={contact}
         />
         <Button title={"Create a chat"} onPress={handleNewChat} />
-        <Text>contacts go here</Text>
+        <Text>chats go here</Text>
       </View>
     </>
   );
