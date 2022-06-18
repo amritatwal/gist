@@ -11,17 +11,14 @@ type SignUpScreenProps = NativeStackScreenProps<RootStackParamList, 'SignUp'>;
 export const SignUp: React.FC<SignUpScreenProps> = (props) => {
     const [email, setEmail] = useState<string>("")
     const [password, setPassword] = useState<string>("")
-    const [name, setName] = useState<string>("frankie lampard")
     // Initialize Cloud Firestore and get a reference to the service
     const db = getDatabase();
 
     useEffect(() => {
         auth.onAuthStateChanged(user => {
+            console.log(user)
             if (user) {
-                updateProfile(user, {
-                    displayName: name
-                });
-                const displayName: string = name;
+                const displayName: string | null = user.providerData[0].displayName;
                 const uid: string = user.uid;
                 const profilePhoto: string | null = user.photoURL;
                 writeUserData(uid, displayName, profilePhoto);
@@ -32,7 +29,7 @@ export const SignUp: React.FC<SignUpScreenProps> = (props) => {
 
 
     // Write user's data to /users 
-    function writeUserData(uid: string, displayName: string, profilePhoto: string | null) {
+    function writeUserData(uid: string, displayName: string | null, profilePhoto: string | null) {
         try {
             set(ref(db, 'users/' + uid), {
                 name: displayName,
@@ -73,11 +70,6 @@ export const SignUp: React.FC<SignUpScreenProps> = (props) => {
 
     return (
         <View>
-            <TextInput
-                placeholder="Full Name"
-                onChangeText={text => setName(text)}
-                value={name}
-            />
             <TextInput
                 placeholder="Email"
                 onChangeText={text => setEmail(text)}

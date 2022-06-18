@@ -28,8 +28,8 @@ export const Home: React.FC<HomeScreenProps> = (props) => {
   function handleNewChat() {
     // UI: pop-up/modal? user is prompted to either add a new contact or create a new group (after MVP)
     // Adding a new contact to create a chat entails: retrieving the contact's name (in order to provide a name when creating/displaying a user's contact list), a phone number or email (MVP)...
-    function writeChatData(currentUser, contact) {
-      const chatUUID = uuidv4().toString();
+    function writeChatData(currentUser: string, contact: string) {
+      const chatUUID: string = uuidv4().toString();
       console.log(currentUser)
       // TODO: 
       // Check a chat between two contacts doesn't already exist otherwise it'll create duplicate chats!
@@ -62,36 +62,38 @@ export const Home: React.FC<HomeScreenProps> = (props) => {
   }
 
   // Read in user's active chats from realtime database
-  function getUserChatIDs(currentUser) {
+  function getUsersChatIDs(currentUser: string | null) {
     // Locate the chat ids under user's uid
     const contactsList = ref(db, 'users/' + currentUser + '/chats');
     onValue(contactsList, (snapshot) => {
       const data = snapshot.val();
-      console.log(data);
-      // TODO: call a function here 
+      const chats: string[] = Object.keys(data);
+      console.log(chats)
+      getUsersChatData(chats)
     })
   }
 
   // Use the chat uids to retrieve data from /chats 
 
-  function getChatData(chats) {
+  function getUsersChatData(chats: string[] | null) {
     const dbRef = ref(db);
-    const results = chats.map(id => {
-      get(child(dbRef, `users/chats/${id}`)).then((snapshot) => {
-        if (snapshot.exists()) {
-          console.log(snapshot.val());
-        } else {
-          console.log("No data available");
-        }
-      }).catch((error) => {
-        console.error(error);
-      });
-    })
+    if (chats) {
+      const results = chats.map(id => {
+        get(child(dbRef, `members/${id}`)).then((snapshot) => {
+          if (snapshot.exists()) {
+            console.log(snapshot.val());
+          } else {
+            console.log("No data available");
+          }
+        }).catch((error) => {
+          console.error(error);
+        });
+      })
+    }
   }
 
 
-
-  getUserChatIDs(auth.currentUser.uid);
+  getUsersChatIDs(auth.currentUser.uid);
 
 
   return (
